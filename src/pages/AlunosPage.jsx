@@ -1,173 +1,175 @@
-import React, { useState } from "react";
+// src/pages/AlunosPage.jsx
+import React, { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
+import { alunoAPI } from "../services/api";
 import "./AlunosPage.css";
 
 export default function AlunosPage() {
   const { user } = useAuth();
 
-  // Dados fictícios
-  const [alunos, setAlunos] = useState([
-    { id: 1, nome: "Ana Souza", email: "ana@escola.com", turma: "6A", notas: { matematica: 8.5 }, presenca: "95%" },
-    { id: 2, nome: "Lucas Martins", email: "lucas@escola.com", turma: "6A", notas: { matematica: 7.0 }, presenca: "88%" },
-    { id: 3, nome: "Mariana Silva", email: "mariana@escola.com", turma: "7B", notas: { portugues: 9.2 }, presenca: "97%" },
-  ]);
+  const [alunos, setAlunos] = useState([]);
+  const [erro, setErro] = useState(null);
 
   const [editData, setEditData] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  // === Estados para professor ===
-  const [selectedAluno, setSelectedAluno] = useState(null);
-  const [showNotaModal, setShowNotaModal] = useState(false);
-  const [showPresencaModal, setShowPresencaModal] = useState(false);
-
-  // === Funções do Admin ===
-  const handleSave = (data) => {
-    if (editData) {
-      setAlunos((prev) => prev.map((a) => (a.id === data.id ? data : a)));
-    } else {
-      setAlunos((prev) => [...prev, { ...data, id: Date.now() }]);
+  // Carregar alunos
+  useEffect(() => {
+    async function carregarAlunos() {
+      try {
+        const response = await alunoAPI.get("/alunos");
+        setAlunos(response.data);
+      } catch (err) {
+        console.error("Erro ao buscar alunos:", err);
+        setErro("Não foi possível carregar os alunos.");
+      }
     }
-    setShowModal(false);
-    setEditData(null);
+    carregarAlunos();
+  }, []);
+
+  // Salvar aluno (POST ou PUT)
+  const handleSave = async (data) => {
+    try {
+      if (editData) {
+        // PUT para edição
+        await alunoAPI.put(`/alunos/${data.id}`, {
+          matricula: data.matricula,
+          nome: data.nome,
+          data_nascimento: data.data_nascimento,
+          email: data.email,
+          telefone: data.telefone,
+          endereco: data.endereco,
+          status: data.status || "ativo",
+        });
+        setAlunos((prev) =>
+          prev.map((a) => (a.id === data.id ? { ...a, ...data } : a))
+        );
+      } else {
+        // POST (novo aluno)
+        const dataToSend = {
+          
+          nome: data.nome,
+          data_nascimento: data.data_nascimento,
+          email: data.email,
+          telefone: data.telefone,
+          endereco: data.endereco,
+          status: data.status || "ativo",
+        };
+        const response = await alunoAPI.post("/alunos", dataToSend);
+        setAlunos((prev) => [...prev, response.data]);
+      }
+
+      setShowModal(false);
+      setEditData(null);
+    } catch (err) {
+      console.error("Erro ao salvar aluno:", err);
+      alert(
+        "Erro ao salvar aluno. Verifique se o backend está rodando e os dados estão corretos."
+      );
+    }
   };
 
-  const handleDelete = (id) => {
+  // Deletar aluno
+  const handleDelete = async (id) => {
     if (window.confirm("Tem certeza que deseja excluir este aluno?")) {
-      setAlunos((prev) => prev.filter((a) => a.id !== id));
+      try {
+        await alunoAPI.delete(`/alunos/${id}`);
+        setAlunos((prev) => prev.filter((a) => a.id !== id));
+      } catch (err) {
+        console.error("Erro ao excluir aluno:", err);
+        alert("Erro ao excluir aluno.");
+      }
     }
   };
 
-  // === Funções do Professor ===
-  const handleSaveNota = (id, nota) => {
-    setAlunos(prev =>
-      prev.map(a =>
-        a.id === id ? { ...a, notas: { ...a.notas, matematica: nota } } : a
-      )
-    );
-    setShowNotaModal(false);
-  };
-
-  const handleSavePresenca = (id, presenca) => {
-    setAlunos(prev =>
-      prev.map(a =>
-        a.id === id ? { ...a, presenca: presenca + "%" } : a
-      )
-    );
-    setShowPresencaModal(false);
-  };
-
-  // === UI Diferenciada por papel ===
   return (
     <div className="alunos-layout">
       <Sidebar />
       <div className="main-content">
         <header className="header">
           <h1>👨‍🎓 Gestão de Alunos</h1>
+          {user && (
+            <p className="usuario-logado">
+              👤 Logado como: <strong>{user.nome}</strong> ({user.role})
+            </p>
+          )}
         </header>
 
-        {/* Caso seja aluno logado */}
+        {!user && (
+          <p className="erro">
+            ⚠️ Nenhum usuário logado. Faça login para acessar esta página.
+          </p>
+        )}
+
+        {/* PERFIL DO ALUNO */}
         {user?.role === "aluno" && (
           <div className="aluno-perfil">
             <h2>📌 Meu Perfil</h2>
-            <p><strong>Nome:</strong> {user.nome}</p>
-            <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>Turma:</strong> 6A</p>
-            <h3>📖 Meu Boletim</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Disciplina</th>
-                  <th>Nota</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td>Matemática</td><td>8.5</td></tr>
-                <tr><td>Português</td><td>7.8</td></tr>
-              </tbody>
-            </table>
+            <p>
+              <strong>ID:</strong> {user.id}
+            </p>
+            <p>
+              <strong>Matrícula:</strong> {user.matricula}
+            </p>
+            <p>
+              <strong>Nome:</strong> {user.nome}
+            </p>
+            <p>
+              <strong>Data de Nascimento:</strong> {user.data_nascimento}
+            </p>
+            <p>
+              <strong>Email:</strong> {user.email}
+            </p>
+            <p>
+              <strong>Telefone:</strong> {user.telefone}
+            </p>
+            <p>
+              <strong>Endereço:</strong> {user.endereco}
+            </p>
+            <p>
+              <strong>Status:</strong> {user.status || "ativo"}
+            </p>
           </div>
         )}
 
-        {/* Caso seja professor logado */}
+        {/* VISÃO DO PROFESSOR */}
         {user?.role === "professor" && (
           <div className="professor-alunos">
-            <h2>👩‍🏫 Alunos das minhas turmas</h2>
+            <h2>👩‍🏫 Lista de Alunos</h2>
+            {erro && <p className="erro">{erro}</p>}
             <table>
               <thead>
                 <tr>
+                  <th>ID</th>
+                  <th>Matrícula</th>
                   <th>Nome</th>
-                  <th>Turma</th>
-                  <th>Nota</th>
-                  <th>Presença</th>
-                  <th>Ações</th>
+                  <th>Data de Nascimento</th>
+                  <th>Email</th>
+                  <th>Telefone</th>
+                  <th>Endereço</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                {alunos
-                  .filter((a) => a.turma === "6A") // professor só vê a própria turma (exemplo fixo)
-                  .map((a) => (
+                {alunos.map((a) => (
                   <tr key={a.id}>
+                    <td>{a.id}</td>
+                    <td>{a.matricula}</td>
                     <td>{a.nome}</td>
-                    <td>{a.turma}</td>
-                    <td>{a.notas.matematica || a.notas.portugues}</td>
-                    <td>{a.presenca}</td>
-                    <td>
-                      <button onClick={() => { setSelectedAluno(a); setShowNotaModal(true); }}>✏️ Nota</button>
-                      <button onClick={() => { setSelectedAluno(a); setShowPresencaModal(true); }}>📋 Presença</button>
-                    </td>
+                    <td>{a.data_nascimento}</td>
+                    <td>{a.email}</td>
+                    <td>{a.telefone}</td>
+                    <td>{a.endereco}</td>
+                    <td>{a.status || "ativo"}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-
-            {/* Modal de Lançar Nota */}
-            {showNotaModal && (
-              <div className="modal-overlay">
-                <div className="modal">
-                  <h3>Lançar Nota - {selectedAluno?.nome}</h3>
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleSaveNota(selectedAluno.id, parseFloat(e.target.nota.value));
-                    }}
-                  >
-                    <label>Nota:</label>
-                    <input type="number" step="0.1" min="0" max="10" name="nota" required />
-                    <div className="modal-actions">
-                      <button type="submit" className="btn-salvar">Salvar</button>
-                      <button type="button" className="btn-cancelar" onClick={() => setShowNotaModal(false)}>Cancelar</button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            )}
-
-            {/* Modal de Lançar Presença */}
-            {showPresencaModal && (
-              <div className="modal-overlay">
-                <div className="modal">
-                  <h3>Lançar Presença - {selectedAluno?.nome}</h3>
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleSavePresenca(selectedAluno.id, e.target.presenca.value);
-                    }}
-                  >
-                    <label>Presença (%):</label>
-                    <input type="number" min="0" max="100" name="presenca" required />
-                    <div className="modal-actions">
-                      <button type="submit" className="btn-salvar">Salvar</button>
-                      <button type="button" className="btn-cancelar" onClick={() => setShowPresencaModal(false)}>Cancelar</button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
-        {/* Caso seja admin logado */}
+        {/* VISÃO DO ADMIN */}
         {user?.role === "admin" && (
           <div className="admin-alunos">
             <div className="alunos-header">
@@ -176,13 +178,18 @@ export default function AlunosPage() {
                 ➕ Adicionar Aluno
               </button>
             </div>
+            {erro && <p className="erro">{erro}</p>}
             <table>
               <thead>
                 <tr>
                   <th>ID</th>
+                  <th>Matrícula</th>
                   <th>Nome</th>
+                  <th>Data de Nascimento</th>
                   <th>Email</th>
-                  <th>Turma</th>
+                  <th>Telefone</th>
+                  <th>Endereço</th>
+                  <th>Status</th>
                   <th>Ações</th>
                 </tr>
               </thead>
@@ -190,11 +197,22 @@ export default function AlunosPage() {
                 {alunos.map((a) => (
                   <tr key={a.id}>
                     <td>{a.id}</td>
+                    <td>{a.matricula}</td>
                     <td>{a.nome}</td>
+                    <td>{a.data_nascimento}</td>
                     <td>{a.email}</td>
-                    <td>{a.turma}</td>
+                    <td>{a.telefone}</td>
+                    <td>{a.endereco}</td>
+                    <td>{a.status || "ativo"}</td>
                     <td>
-                      <button onClick={() => { setEditData(a); setShowModal(true); }}>✏️</button>
+                      <button
+                        onClick={() => {
+                          setEditData(a);
+                          setShowModal(true);
+                        }}
+                      >
+                        ✏️
+                      </button>
                       <button onClick={() => handleDelete(a.id)}>🗑️</button>
                     </td>
                   </tr>
@@ -202,7 +220,7 @@ export default function AlunosPage() {
               </tbody>
             </table>
 
-            {/* Modal de adicionar/editar */}
+            {/* Modal de cadastro/edição */}
             {showModal && (
               <div className="modal-overlay">
                 <div className="modal">
@@ -212,22 +230,87 @@ export default function AlunosPage() {
                       e.preventDefault();
                       handleSave({
                         id: editData ? editData.id : null,
+                        matricula: e.target.matricula.value,
                         nome: e.target.nome.value,
+                        data_nascimento: e.target.data_nascimento.value,
                         email: e.target.email.value,
-                        turma: e.target.turma.value,
+                        telefone: e.target.telefone.value,
+                        endereco: e.target.endereco.value,
+                        status: e.target.status.value || "ativo",
                       });
                     }}
                   >
+                    <label>Matrícula</label>
+                    <input
+                      type="text"
+                      name="matricula"
+                      defaultValue={editData?.matricula || ""}
+                      required
+                    />
+
                     <label>Nome</label>
-                    <input type="text" name="nome" defaultValue={editData?.nome || ""} required />
+                    <input
+                      type="text"
+                      name="nome"
+                      defaultValue={editData?.nome || ""}
+                      required
+                    />
+
+                    <label>Data de Nascimento</label>
+                    <input
+                      type="date"
+                      name="data_nascimento"
+                      defaultValue={editData?.data_nascimento || ""}
+                      required
+                    />
+
                     <label>Email</label>
-                    <input type="email" name="email" defaultValue={editData?.email || ""} required />
-                    <label>Turma</label>
-                    <input type="text" name="turma" defaultValue={editData?.turma || ""} required />
+                    <input
+                      type="email"
+                      name="email"
+                      defaultValue={editData?.email || ""}
+                      required
+                    />
+
+                    <label>Telefone</label>
+                    <input
+                      type="text"
+                      name="telefone"
+                      defaultValue={editData?.telefone || ""}
+                      required
+                    />
+
+                    <label>Endereço</label>
+                    <input
+                      type="text"
+                      name="endereco"
+                      defaultValue={editData?.endereco || ""}
+                      required
+                    />
+
+                    <label>Status</label>
+                    <select
+                      name="status"
+                      defaultValue={editData?.status || "ativo"}
+                    >
+                      <option value="ativo">Ativo</option>
+                      <option value="inativo">Inativo</option>
+                    </select>
 
                     <div className="modal-actions">
-                      <button type="submit" className="btn-salvar">Salvar</button>
-                      <button type="button" className="btn-cancelar" onClick={() => { setShowModal(false); setEditData(null); }}>Cancelar</button>
+                      <button type="submit" className="btn-salvar">
+                        Salvar
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-cancelar"
+                        onClick={() => {
+                          setShowModal(false);
+                          setEditData(null);
+                        }}
+                      >
+                        Cancelar
+                      </button>
                     </div>
                   </form>
                 </div>
@@ -235,6 +318,13 @@ export default function AlunosPage() {
             )}
           </div>
         )}
+
+        {user &&
+          !["aluno", "professor", "admin"].includes(user.role) && (
+            <p className="erro">
+              ⚠️ Seu perfil não possui permissões para acessar esta página.
+            </p>
+          )}
       </div>
     </div>
   );

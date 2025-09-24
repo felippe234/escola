@@ -1,219 +1,248 @@
-import React, { useState } from "react";
+// src/pages/ProfessoresPage.jsx
+import React, { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
+import { professorAPI } from "../services/api";
 import "./ProfessoresPage.css";
 
 export default function ProfessoresPage() {
   const { user } = useAuth();
 
-  const [professores, setProfessores] = useState([
-    { id: 1, nome: "Carlos Lima", email: "carlos@escola.com", telefone: "11987654321", titulacao: "Mestrado", disciplinas: ["Matemática", "Física"] },
-    { id: 2, nome: "Fernanda Oliveira", email: "fernanda@escola.com", telefone: "21999887766", titulacao: "Doutorado", disciplinas: ["Português", "Redação"] },
-  ]);
-
-  const [search, setSearch] = useState("");
-  const [showModal, setShowModal] = useState(false);
+  const [professores, setProfessores] = useState([]);
+  const [erro, setErro] = useState(null);
   const [editData, setEditData] = useState(null);
-  const [feedback, setFeedback] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
-  const filteredProfessores = professores.filter(
-    (p) =>
-      p.nome.toLowerCase().includes(search.toLowerCase()) ||
-      p.email.toLowerCase().includes(search.toLowerCase())
-  );
+  // 🔄 Carregar professores
+  useEffect(() => {
+    async function carregarProfessores() {
+      try {
+        const response = await professorAPI.get("/professores");
+        setProfessores(response.data);
+      } catch (err) {
+        console.error("Erro ao buscar professores:", err);
+        setErro("Não foi possível carregar os professores.");
+      }
+    }
+    carregarProfessores();
+  }, []);
 
-  const handleSave = (data) => {
-    if (editData) {
-      setProfessores((prev) =>
-        prev.map((p) => (p.id === data.id ? data : p))
+  // 💾 Salvar professor (criar ou atualizar)
+  const handleSave = async (data) => {
+    try {
+      if (editData) {
+        // Atualizar professor
+        await professorAPI.put(`/professores/${editData.id}`, {
+          nome: data.nome,
+          email: data.email,
+          telefone: data.telefone,
+          titulacao: data.titulacao,
+          disciplina: data.disciplina,
+        });
+        setProfessores((prev) =>
+          prev.map((p) =>
+            p.id === editData.id ? { ...p, ...data, id: editData.id } : p
+          )
+        );
+      } else {
+        // Criar professor (não enviar id)
+        const response = await professorAPI.post("/professores", {
+          nome: data.nome,
+          email: data.email,
+          telefone: data.telefone,
+          titulacao: data.titulacao,
+          disciplina: data.disciplina,
+        });
+        setProfessores((prev) => [...prev, response.data]);
+      }
+
+      setShowModal(false);
+      setEditData(null);
+    } catch (err) {
+      console.error("Erro ao salvar professor:", err);
+      alert(
+        "Erro ao salvar professor. Verifique se o backend está rodando e os dados estão corretos."
       );
-      setFeedback("Professor atualizado com sucesso ✅");
-    } else {
-      setProfessores((prev) => [...prev, { ...data, id: Date.now() }]);
-      setFeedback("Professor adicionado com sucesso ✅");
     }
-    setShowModal(false);
-    setEditData(null);
-    setTimeout(() => setFeedback(null), 3000);
   };
 
-  const handleDelete = (id) => {
+  // 🗑️ Deletar professor
+  const handleDelete = async (id) => {
     if (window.confirm("Tem certeza que deseja excluir este professor?")) {
-      setProfessores((prev) => prev.filter((p) => p.id !== id));
-      setFeedback("Professor excluído com sucesso 🗑️");
-      setTimeout(() => setFeedback(null), 3000);
+      try {
+        await professorAPI.delete(`/professores/${id}`);
+        setProfessores((prev) => prev.filter((p) => p.id !== id));
+      } catch (err) {
+        console.error("Erro ao excluir professor:", err);
+        alert("Erro ao excluir professor.");
+      }
     }
   };
-
-  // 🔒 Bloqueia alunos
-  if (user?.role === "aluno") {
-    return (
-      <div className="acesso-negado">
-        <h2>🚫 Acesso negado</h2>
-        <p>Somente professores e administradores podem acessar esta página.</p>
-        <button
-          className="btn-voltar"
-          onClick={() => (window.location.href = "/dashboard")}
-        >
-          🏠 Voltar ao Dashboard
-        </button>
-      </div>
-    );
-  }
 
   return (
     <div className="professores-layout">
-      {/* Sidebar */}
       <Sidebar />
-
-      {/* Conteúdo principal */}
       <div className="main-content">
-        {/* Header */}
         <header className="header">
           <h1>👨‍🏫 Gestão de Professores</h1>
-          <div className="header-actions">
-            <input
-              type="text"
-              placeholder="Buscar por nome ou e-mail..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <button className="btn-add" onClick={() => setShowModal(true)}>
-              ➕ Adicionar Professor
-            </button>
-          </div>
+          {user && (
+            <p className="usuario-logado">
+              👤 Logado como: <strong>{user.nome}</strong> ({user.role})
+            </p>
+          )}
         </header>
 
-        {/* Feedback */}
-        {feedback && <div className="feedback">{feedback}</div>}
+        {!user && (
+          <p className="erro">
+            ⚠️ Nenhum usuário logado. Faça login para acessar esta página.
+          </p>
+        )}
 
-        {/* Tabela */}
-        <div className="professores-table">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nome</th>
-                <th>E-mail</th>
-                <th>Telefone</th>
-                <th>Titulação</th>
-                <th>Disciplinas</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProfessores.map((prof) => (
-                <tr key={prof.id}>
-                  <td>{prof.id}</td>
-                  <td>{prof.nome}</td>
-                  <td>{prof.email}</td>
-                  <td>{prof.telefone}</td>
-                  <td>{prof.titulacao}</td>
-                  <td>{prof.disciplinas?.join(", ") || "—"}</td>
-                  <td>
-                    <button
-                      onClick={() => {
-                        setEditData(prof);
-                        setShowModal(true);
-                      }}
-                    >
-                      ✏️
-                    </button>
-                    <button onClick={() => handleDelete(prof.id)}>🗑️</button>
-                    <button
-                      onClick={() => alert(JSON.stringify(prof, null, 2))}
-                    >
-                      👁️
-                    </button>
-                  </td>
+        {/* PERFIL DO PROFESSOR */}
+        {user?.role === "professor" && (
+          <div className="professor-perfil">
+            <h2>📌 Meu Perfil</h2>
+            <p><strong>ID:</strong> {user.id}</p>
+            <p><strong>Nome:</strong> {user.nome}</p>
+            <p><strong>Email:</strong> {user.email}</p>
+            <p><strong>Telefone:</strong> {user.telefone}</p>
+            <p><strong>Titulação:</strong> {user.titulacao}</p>
+            <p><strong>Disciplina:</strong> {user.disciplina}</p>
+          </div>
+        )}
+
+        {/* VISÃO DO ADMIN */}
+        {user?.role === "admin" && (
+          <div className="admin-professores">
+            <div className="professores-header">
+              <h2>📋 Lista de Professores</h2>
+              <button className="btn-add" onClick={() => setShowModal(true)}>
+                ➕ Adicionar Professor
+              </button>
+            </div>
+
+            {erro && <p className="erro">{erro}</p>}
+
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nome</th>
+                  <th>Email</th>
+                  <th>Telefone</th>
+                  <th>Titulação</th>
+                  <th>Disciplina</th>
+                  <th>Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {professores.map((p) => (
+                  <tr key={p.id}>
+                    <td>{p.id}</td>
+                    <td>{p.nome}</td>
+                    <td>{p.email}</td>
+                    <td>{p.telefone}</td>
+                    <td>{p.titulacao}</td>
+                    <td>{p.disciplina}</td>
+                    <td>
+                      <button
+                        onClick={() => {
+                          setEditData(p);
+                          setShowModal(true);
+                        }}
+                      >
+                        ✏️
+                      </button>
+                      <button onClick={() => handleDelete(p.id)}>🗑️</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
-        {/* Modal */}
-        {showModal && (
-          <div className="modal-overlay">
-            <div className="modal">
-              <h3>{editData ? "Editar Professor" : "Adicionar Professor"}</h3>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSave({
-                    id: editData ? editData.id : null,
-                    nome: e.target.nome.value,
-                    email: e.target.email.value,
-                    telefone: e.target.telefone.value,
-                    titulacao: e.target.titulacao.value,
-                    disciplinas: e.target.disciplinas.value
-                      .split(",")
-                      .map((d) => d.trim()),
-                  });
-                }}
-              >
-                <label>Nome</label>
-                <input
-                  type="text"
-                  name="nome"
-                  defaultValue={editData?.nome || ""}
-                  required
-                />
-
-                <label>E-mail</label>
-                <input
-                  type="email"
-                  name="email"
-                  defaultValue={editData?.email || ""}
-                  required
-                />
-
-                <label>Telefone</label>
-                <input
-                  type="text"
-                  name="telefone"
-                  defaultValue={editData?.telefone || ""}
-                  required
-                />
-
-                <label>Titulação</label>
-                <select
-                  name="titulacao"
-                  defaultValue={editData?.titulacao || ""}
-                  required
-                >
-                  <option value="">Selecione</option>
-                  <option value="Graduação">Graduação</option>
-                  <option value="Mestrado">Mestrado</option>
-                  <option value="Doutorado">Doutorado</option>
-                </select>
-
-                <label>Disciplinas</label>
-                <input
-                  type="text"
-                  name="disciplinas"
-                  placeholder="Ex: Matemática, Física"
-                  defaultValue={editData?.disciplinas?.join(", ") || ""}
-                />
-
-                <div className="modal-actions">
-                  <button type="submit" className="btn-salvar">
-                    Salvar
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-cancelar"
-                    onClick={() => {
-                      setShowModal(false);
-                      setEditData(null);
+            {/* Modal */}
+            {showModal && (
+              <div className="modal-overlay">
+                <div className="modal">
+                  <h3>{editData ? "Editar Professor" : "Adicionar Professor"}</h3>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSave({
+                        nome: e.target.nome.value,
+                        email: e.target.email.value,
+                        telefone: e.target.telefone.value,
+                        titulacao: e.target.titulacao.value,
+                        disciplina: e.target.disciplina.value,
+                      });
                     }}
                   >
-                    Cancelar
-                  </button>
+                    <label>Nome</label>
+                    <input
+                      type="text"
+                      name="nome"
+                      defaultValue={editData?.nome || ""}
+                      required
+                    />
+
+                    <label>Email</label>
+                    <input
+                      type="email"
+                      name="email"
+                      defaultValue={editData?.email || ""}
+                      required
+                    />
+
+                    <label>Telefone</label>
+                    <input
+                      type="text"
+                      name="telefone"
+                      defaultValue={editData?.telefone || ""}
+                    />
+
+                    <label>Titulação</label>
+                    <select
+                      name="titulacao"
+                      defaultValue={editData?.titulacao || ""}
+                    >
+                      <option value="">Selecione</option>
+                      <option value="Graduação">Graduação</option>
+                      <option value="Mestrado">Mestrado</option>
+                      <option value="Doutorado">Doutorado</option>
+                    </select>
+
+                    <label>Disciplina</label>
+                    <input
+                      type="text"
+                      name="disciplina"
+                      defaultValue={editData?.disciplina || ""}
+                      required
+                    />
+
+                    <div className="modal-actions">
+                      <button type="submit" className="btn-salvar">Salvar</button>
+                      <button
+                        type="button"
+                        className="btn-cancelar"
+                        onClick={() => {
+                          setShowModal(false);
+                          setEditData(null);
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
                 </div>
-              </form>
-            </div>
+              </div>
+            )}
           </div>
+        )}
+
+        {user && !["professor", "admin"].includes(user.role) && (
+          <p className="erro">
+            ⚠️ Seu perfil não possui permissões para acessar esta página.
+          </p>
         )}
       </div>
     </div>
