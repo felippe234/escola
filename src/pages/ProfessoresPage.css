@@ -1,16 +1,16 @@
+/* ====== Layout geral ====== */
 .professores-layout {
   display: flex;
   min-height: 100vh;
   background: #f9fafb;
 }
 
-/* Conteúdo principal */
 .main-content {
   flex: 1;
   padding: 20px;
 }
 
-/* Header */
+/* ====== Header ====== */
 .header {
   display: flex;
   justify-content: space-between;
@@ -50,7 +50,7 @@
   background: #1d4ed8;
 }
 
-/* Feedback */
+/* ====== Feedback ====== */
 .feedback {
   background: #ecfdf5;
   color: #065f46;
@@ -60,41 +60,120 @@
   font-weight: 500;
 }
 
-/* Tabela */
+/* ====== ESTILO DA TABELA (mesmo da avaliação) ====== */
+.professores-table {
+  background: #0b3d91;
+  border-radius: 12px;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.08);
+  overflow-x: auto;
+  width: 100%;
+  max-width: 100%;
+  margin: 20px auto;
+  transition: all 0.3s ease;
+}
+
 .professores-table table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.professores-table th,
-.professores-table td {
-  padding: 12px;
-  border-bottom: 1px solid #e5e7eb;
-  text-align: left;
+  min-width: 800px;
 }
 
 .professores-table th {
-  background: #f3f4f6;
+  background:blue;          /* Azul escuro do cabeçalho */
+  color: #ffffff;               /* Texto branco */
+  padding: 12px;
+  text-align: left;
+  font-size: 0.9rem;
   font-weight: 600;
+  white-space: nowrap;
+}
+
+.professores-table td {
+  padding: 12px;
+  font-size: 0.9rem;
+  color: #333333;
+  border-top: 1px solid #e0e0e0;
+  text-align: left;
+  word-wrap: break-word;
 }
 
 .professores-table tr:hover {
-  background: #f9fafb;
+  background: #f4f6fa;         /* Fundo claro no hover */
+  transition: background 0.2s ease-in-out;
 }
 
-/* Botões da tabela */
-.professores-table button {
-  margin-right: 6px;
+/* ====== Botões de ação ====== */
+.professores-table .btn-editar,
+.professores-table .btn-excluir {
+  width: 80px;
+  text-align: center;
   border: none;
-  background: none;
+  padding: 6px 0;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 1.1rem;
+  transition: all 0.2s ease;
 }
 
-/* Modal */
+.professores-table .btn-editar {
+  background: #0b3d91;
+  color: #fff;
+}
+
+.professores-table .btn-editar:hover {
+  background: #072f72;
+  transform: scale(1.03);
+}
+
+.professores-table .btn-excluir {
+  background: #d32f2f;
+  color: #fff;
+}
+
+.professores-table .btn-excluir:hover {
+  background: #b71c1c;
+  transform: scale(1.03);
+}
+
+/* ====== Responsividade ====== */
+@media (max-width: 768px) {
+  .professores-table table {
+    font-size: 0.8rem;
+    min-width: 600px;
+  }
+
+  .professores-table th,
+  .professores-table td {
+    padding: 8px;
+  }
+
+  .professores-table .btn-editar,
+  .professores-table .btn-excluir {
+    width: 70px;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .professores-table table {
+    min-width: 500px;
+  }
+
+  .professores-table th,
+  .professores-table td {
+    font-size: 0.75rem;
+    padding: 6px;
+  }
+
+  .professores-table .btn-editar,
+  .professores-table .btn-excluir {
+    width: 60px;
+    font-size: 0.7rem;
+  }
+}
+
+/* ====== Modal ====== */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -156,7 +235,7 @@
   cursor: pointer;
 }
 
-/* Tela de acesso negado */
+/* ====== Tela de acesso negado ====== */
 .acesso-negado {
   text-align: center;
   margin-top: 80px;
@@ -178,3 +257,5 @@
 .btn-voltar:hover {
   background: #1d4ed8;
 }
+.professores-table th {
+  background: #0b3d91;         /* Azul do cabeçalho "Gestão Escolar" */}

@@ -30,8 +30,8 @@ export const alunoAPI = axios.create({
   baseURL: 'http://localhost:4001',
   headers: { 'Content-Type': 'application/json' },
 });
-// ✅ API de Turma-Aluno (porta 4005)
-export const turmaAlunoAPI = axios.create({
-  baseURL: 'http://localhost:4006',
+// ✅ API de login (porta 4005)
+export const loginAPI = axios.create({
+  baseURL: 'http://localhost:4005',
   headers: { 'Content-Type': 'application/json' },
 });

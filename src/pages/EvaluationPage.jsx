@@ -6,18 +6,21 @@ import EvaluationTable from '../components/EvaluationTable';
 import NewEvaluationModal from '../components/Modals/NewEvaluationModal';
 import BoletimModal from '../components/Modals/BoletimModal';
 import { useAuth } from '../context/AuthContext';
-import { avaliacaoAPI, alunoAPI } from '../services/api';
+import { avaliacaoAPI, alunoAPI, professorAPI, turmaAPI } from '../services/api';
 
 export default function EvaluationPage() {
-  const [openNew, setOpenNew] = useState(false);           // Controle do modal de nova avaliação
-  const [openBoletim, setOpenBoletim] = useState(false);   // Controle do modal do boletim
-  const [avaliacoes, setAvaliacoes] = useState([]);        // Lista de avaliações
-  const [alunosMap, setAlunosMap] = useState({});          // Mapa de alunos por ID
-  const [editData, setEditData] = useState(null);          // Avaliação que está sendo editada
+  const [openNew, setOpenNew] = useState(false);
+  const [openBoletim, setOpenBoletim] = useState(false);
+  const [avaliacoes, setAvaliacoes] = useState([]);
+  const [alunosMap, setAlunosMap] = useState({});
+  const [professoresMap, setProfessoresMap] = useState({});
+  const [disciplinasMap, setDisciplinasMap] = useState({});
+  const [turmasMap, setTurmasMap] = useState({});
+  const [editData, setEditData] = useState(null);
 
   const { user } = useAuth();
 
-  // 🔹 Carrega avaliações do backend
+  // 🔹 Carrega avaliações
   useEffect(() => {
     const carregarAvaliacoes = async () => {
       try {
@@ -31,7 +34,7 @@ export default function EvaluationPage() {
     carregarAvaliacoes();
   }, []);
 
-  // 🔹 Carrega alunos e monta mapa por ID
+  // 🔹 Carrega alunos
   useEffect(() => {
     const carregarAlunos = async () => {
       try {
@@ -44,6 +47,49 @@ export default function EvaluationPage() {
       }
     };
     carregarAlunos();
+  }, []);
+
+  // 🔹 Carrega professores e disciplinas
+  useEffect(() => {
+    const carregarProfessores = async () => {
+      try {
+        const res = await professorAPI.get("/professores");
+        const profMap = {};
+        const discMap = {};
+
+        res.data.forEach(p => {
+          profMap[p.id] = p;
+          if (p.disciplinas && Array.isArray(p.disciplinas)) {
+            p.disciplinas.forEach(d => {
+              discMap[d.id] = d;
+            });
+          }
+        });
+
+        setProfessoresMap(profMap);
+        setDisciplinasMap(discMap);
+      } catch (err) {
+        console.error("Erro ao carregar professores:", err);
+        setProfessoresMap({});
+        setDisciplinasMap({});
+      }
+    };
+    carregarProfessores();
+  }, []);
+
+  // 🔹 Carrega turmas
+  useEffect(() => {
+    const carregarTurmas = async () => {
+      try {
+        const res = await turmaAPI.get("/turmas");
+        const map = {};
+        res.data.forEach(t => (map[t.id] = t));
+        setTurmasMap(map);
+      } catch {
+        setTurmasMap({});
+      }
+    };
+    carregarTurmas();
   }, []);
 
   // 🔹 Boletim do aluno logado
@@ -94,7 +140,7 @@ export default function EvaluationPage() {
     <div className="evaluation-page">
       <Sidebar />
       <div className="main">
-        <Header />
+        <Header user={user}/>
         <div className="content">
           <div className="page-header">
             <div>
@@ -103,15 +149,12 @@ export default function EvaluationPage() {
             </div>
 
             <div style={{ display: "flex", gap: "10px" }}>
-              {/* Professores e admins podem criar avaliações */}
-              {(user?.role === 'professor' || user?.role === 'admin') && (
+              {(user?.tipo_usuario === 'professor' || user?.tipo_usuario === 'admin') && (
                 <button className="btn-nova" onClick={() => setOpenNew(true)}>
                   + Nova Avaliação
                 </button>
               )}
-
-              {/* Aluno só pode ver boletim */}
-              {user?.role === 'aluno' && (
+              {user?.tipo_usuario=== 'aluno' && (
                 <button className="btn-nova" onClick={() => setOpenBoletim(true)}>
                   📘 Ver Boletim
                 </button>
@@ -119,30 +162,39 @@ export default function EvaluationPage() {
             </div>
           </div>
 
-          {/* Tabela de avaliações */}
           <EvaluationTable
             avaliacoes={avaliacoes}
             setAvaliacoes={setAvaliacoes}
             alunosMap={alunosMap}
-            showOnlyOwn={user?.role === 'aluno'}
+            turmasMap={turmasMap}
+            disciplinasMap={disciplinasMap}
+            professoresMap={professoresMap}
+            showOnlyOwn={user?.tipo_usuario=== 'aluno'}
             onEdit={(a) => { setEditData(a); setOpenNew(true); }}
             onDelete={handleDelete}
           />
 
-          {/* Modal de nova/edição de avaliação */}
           <NewEvaluationModal
             isOpen={openNew}
             onClose={() => { setOpenNew(false); setEditData(null); }}
             onSaveSuccess={handleSave}
             editData={editData}
           />
-
-          {/* Modal de boletim do aluno */}
+          
           <BoletimModal
             isOpen={openBoletim}
             onClose={() => setOpenBoletim(false)}
-            aluno={boletimAluno}
+            aluno={{ ...boletimAluno, usuario_id: user?.usuario_id }}
+            avaliacoes={avaliacoes}
+            setAvaliacoes={setAvaliacoes}
+            alunosMap={alunosMap}
+            turmasMap={turmasMap}
+            disciplinasMap={disciplinasMap}
+            professoresMap={professoresMap}
+            showOnlyOwn={user?.tipo_usuario=== 'aluno'}
           />
+          
+
         </div>
       </div>
     </div>

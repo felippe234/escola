@@ -1,0 +1,37 @@
+/* src/components/BoletimPDFDownloader.css */
+
+/* 🎨 Estilo moderno e suave para o botão de download */
+.pdf-download-btn {
+  background-color: #2563eb; /* azul moderno */
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
+  transition: all 0.25s ease;
+}
+
+/* Hover elegante */
+.pdf-download-btn:hover {
+  background-color: #1d4ed8;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.5);
+  transform: translateY(-2px);
+}
+
+/* Clique (efeito sutil) */
+.pdf-download-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
+}
+
+/* Acessibilidade e foco */
+.pdf-download-btn:focus {
+  outline: 2px solid #93c5fd;
+  outline-offset: 3px;
+}

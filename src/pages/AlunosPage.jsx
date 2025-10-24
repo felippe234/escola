@@ -91,7 +91,7 @@ export default function AlunosPage() {
           <h1>👨‍🎓 Gestão de Alunos</h1>
           {user && (
             <p className="usuario-logado">
-              👤 Logado como: <strong>{user.nome}</strong> ({user.role})
+              👤 Logado como: <strong>{user.nome}</strong> ({user.tipo_usuario})
             </p>
           )}
         </header>
@@ -103,7 +103,7 @@ export default function AlunosPage() {
         )}
 
         {/* PERFIL DO ALUNO */}
-        {user?.role === "aluno" && (
+        {user?.tipo_usuario === "aluno" && (
           <div className="aluno-perfil">
             <h2>📌 Meu Perfil</h2>
             <p>
@@ -134,7 +134,7 @@ export default function AlunosPage() {
         )}
 
         {/* VISÃO DO PROFESSOR */}
-        {user?.role === "professor" && (
+        {user?.tipo_usuario === "professor" && (
           <div className="professor-alunos">
             <h2>👩‍🏫 Lista de Alunos</h2>
             {erro && <p className="erro">{erro}</p>}
@@ -170,7 +170,7 @@ export default function AlunosPage() {
         )}
 
         {/* VISÃO DO ADMIN */}
-        {user?.role === "admin" && (
+        {user?.tipo_usuario === "admin" && (
           <div className="admin-alunos">
             <div className="alunos-header">
               <h2>📋 Lista de Alunos</h2>
@@ -320,7 +320,7 @@ export default function AlunosPage() {
         )}
 
         {user &&
-          !["aluno", "professor", "admin"].includes(user.role) && (
+          !["aluno", "professor", "admin"].includes(user.tipo_usuario) && (
             <p className="erro">
               ⚠️ Seu perfil não possui permissões para acessar esta página.
             </p>

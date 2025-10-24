@@ -3,10 +3,9 @@ import './NewEvaluationModal.css';
 import { avaliacaoAPI, alunoAPI, turmaAPI, professorAPI } from '../../services/api';
 
 const NewEvaluationModal = ({ isOpen, onClose, onSaveSuccess, editData }) => {
-  // Estado principal do formulário
   const [formData, setFormData] = useState({
     turma_id: '',
-    disciplina_id: '',
+    disciplina: '',
     professor_id: '',
     aluno_id: '',
     tipo: '',
@@ -17,13 +16,12 @@ const NewEvaluationModal = ({ isOpen, onClose, onSaveSuccess, editData }) => {
     nota: ''
   });
 
-  // Estados auxiliares para popular selects
   const [alunos, setAlunos] = useState([]);
   const [turmas, setTurmas] = useState([]);
   const [professores, setProfessores] = useState([]);
   const [disciplinas, setDisciplinas] = useState([]);
 
-  // 🔹 Carrega alunos, turmas e professores ao abrir modal
+  // 🔹 Carrega dados ao abrir o modal
   useEffect(() => {
     if (!isOpen) return;
 
@@ -36,43 +34,22 @@ const NewEvaluationModal = ({ isOpen, onClose, onSaveSuccess, editData }) => {
         setAlunos(alunosRes.data);
         setTurmas(turmasRes.data);
         setProfessores(professoresRes.data);
-
-        // Se NÃO estivermos editando, inicializa valores automaticamente
-        if (!editData) {
-          const primeiroAluno = alunosRes.data[0];
-          const primeiraTurma = turmasRes.data[0];
-          const primeiroProfessor = professoresRes.data[0];
-          const primeiraDisciplina = primeiroProfessor?.disciplinas?.[0];
-
-          setFormData({
-            aluno_id: primeiroAluno ? String(primeiroAluno.id) : '',
-            turma_id: primeiraTurma ? String(primeiraTurma.id) : '',
-            professor_id: primeiroProfessor ? String(primeiroProfessor.id) : '',
-            disciplina_id: primeiraDisciplina ? String(primeiraDisciplina.id) : '',
-            tipo: '',
-            data: '',
-            peso: '',
-            prova: '',
-            trabalho: '',
-            nota: ''
-          });
-
-          setDisciplinas(primeiroProfessor?.disciplinas || []);
-        }
       })
       .catch(() => {
-        // fallback em caso de erro na API
         setAlunos([]);
         setTurmas([]);
         setProfessores([]);
-        setDisciplinas([]);
       });
+  }, [isOpen]);
 
-    // Se estivermos editando, preenche os dados existentes
+  // 🔹 Preenche o formulário quando editData mudar ou professores forem carregados
+  useEffect(() => {
+    if (!isOpen || professores.length === 0) return;
+
     if (editData) {
       setFormData({
         turma_id: editData.turma_id ? String(editData.turma_id) : '',
-        disciplina_id: editData.disciplina_id ? String(editData.disciplina_id) : '',
+        disciplina: editData.disciplina || '',
         professor_id: editData.professor_id ? String(editData.professor_id) : '',
         aluno_id: editData.aluno_id ? String(editData.aluno_id) : '',
         tipo: editData.tipo || '',
@@ -83,52 +60,56 @@ const NewEvaluationModal = ({ isOpen, onClose, onSaveSuccess, editData }) => {
         nota: editData.nota || ''
       });
 
-      const prof = editData.professor_id
-        ? professores.find(p => p.id === Number(editData.professor_id))
-        : null;
+      const prof = professores.find(p => p.id === Number(editData.professor_id));
       setDisciplinas(prof?.disciplinas || []);
+    } else {
+      const primeiroAluno = alunos[0];
+      const primeiraTurma = turmas[0];
+      const primeiroProfessor = professores[0];
+      const primeiraDisciplina = primeiroProfessor?.disciplinas?.[0];
+
+      setFormData({
+        aluno_id: primeiroAluno ? String(primeiroAluno.id) : '',
+        turma_id: primeiraTurma ? String(primeiraTurma.id) : '',
+        professor_id: primeiroProfessor ? String(primeiroProfessor.id) : '',
+        disciplina: primeiraDisciplina ? primeiraDisciplina.nome: '',
+        tipo: '',
+        data: '',
+        peso: '',
+        prova: '',
+        trabalho: '',
+        nota: ''
+      });
+      setDisciplinas(primeiroProfessor?.disciplinas || []);
     }
+  }, [editData, professores, alunos, turmas, isOpen]);
 
-  }, [isOpen, editData]);
-
-  // 🔹 Atualiza disciplinas sempre que o professor mudar
+  // 🔹 Atualiza disciplinas quando o professor mudar
   useEffect(() => {
     const prof = professores.find(p => p.id === Number(formData.professor_id));
     const novasDisciplinas = prof?.disciplinas || [];
     setDisciplinas(novasDisciplinas);
 
-    // Seleciona a primeira disciplina automaticamente se existir
     if (novasDisciplinas.length > 0) {
-      const primeira = String(novasDisciplinas[0].id);
-      if (formData.disciplina_id !== primeira) {
-        setFormData(prev => ({ ...prev, disciplina_id: primeira }));
-      }
+      setFormData(prev => ({ ...prev, disciplina: novasDisciplinas[0].nome }));
     } else {
-      if (formData.disciplina_id !== '') {
-        setFormData(prev => ({ ...prev, disciplina_id: '' }));
-      }
+      setFormData(prev => ({ ...prev, disciplina: '' }));
     }
-  }, [formData.professor_id, formData.disciplina_id, professores]);
+  }, [formData.professor_id, professores]);
 
-  // 🔹 Função para enviar o formulário
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Verifica campos obrigatórios
-    const requiredFields = ['turma_id', 'disciplina_id', 'professor_id', 'aluno_id', 'tipo', 'data', 'peso'];
+    const requiredFields = ['turma_id', 'disciplina', 'professor_id', 'aluno_id', 'tipo', 'data', 'peso'];
     const missingFields = requiredFields.filter(f => !formData[f] || formData[f] === '');
-
     if (missingFields.length > 0) {
       alert(`Preencha os campos obrigatórios: ${missingFields.join(', ')}`);
       return;
     }
 
-    // Cria payload com disciplina_id seguro (nunca NaN)
     const payload = {
       turma_id: Number(formData.turma_id),
-      disciplina_id: formData.disciplina_id
-        ? Number(formData.disciplina_id)
-        : Number(disciplinas[0]?.id || 0), // fallback para primeira disciplina
+      disciplina:formData.disciplina,
       professor_id: Number(formData.professor_id),
       aluno_id: Number(formData.aluno_id),
       tipo: formData.tipo,
@@ -139,9 +120,8 @@ const NewEvaluationModal = ({ isOpen, onClose, onSaveSuccess, editData }) => {
       nota: formData.nota ? parseFloat(formData.nota) : null
     };
 
-    console.log("Payload enviado:", payload);
-
     try {
+      console.log(payload);
       const response = await avaliacaoAPI.post('/avaliacoes', payload);
       onSaveSuccess(response.data);
       onClose();
@@ -187,12 +167,12 @@ const NewEvaluationModal = ({ isOpen, onClose, onSaveSuccess, editData }) => {
 
           <label>Disciplina</label>
           <select
-            value={formData.disciplina_id}
-            onChange={e => setFormData({ ...formData, disciplina_id: e.target.value })}
+            value={formData.disciplina}
+            onChange={e => setFormData({ ...formData, disciplina: e.target.value })}
             required
           >
             {disciplinas.length > 0 ? (
-              disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)
+              disciplinas.map(d => <option key={d.id} value={d.nome}>{d.nome}</option>)
             ) : (
               <option value="" disabled>Selecione um professor primeiro</option>
             )}

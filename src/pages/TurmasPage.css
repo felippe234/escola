@@ -36,8 +36,9 @@ th, td {
 }
 
 th {
-  background: #f1f5f9;
-  color: #374151;
+  background: #3063ba;
+  color: black
+  ;
 }
 
 tr:hover {

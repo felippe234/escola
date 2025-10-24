@@ -1,115 +1,167 @@
-/* Sidebar container */
+/* ====== Variáveis de tema (fácil de ajustar) ====== */
+:root{
+  --primary: #2563eb;       /* azul médio (botões) */
+  --primary-dark: #124a86;  /* azul mais escuro (ícone/ativo) */
+  --bg: #f7fafc;            /* fundo da área ao lado da sidebar */
+  --surface: #ffffff;       /* fundo branco dos itens */
+  --muted: #6b7280;         /* texto secundário */
+  --text: #0f172a;          /* texto principal */
+  --border: #e5e7eb;
+  --shadow: rgba(2,6,23,0.06);
+}
+
+/* Sidebar container (base) */
 .sidebar {
   width: 240px;
-  background: #eff6ff; /* azul-cinza bem claro */
-  color: #eff1f4;
+  background: var(--surface);     /* branco para match imagem */
+  color: var(--text);
   display: flex;
   flex-direction: column;
-  transition: width 0.3s ease;
+  transition: width 0.28s ease, box-shadow 0.28s ease;
   position: relative;
   min-height: 100vh;
-  border-right: 1px solid #e5e7eb;
-  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.05); /* sombra sutil */
+  border-right: 1px solid var(--border);
+  box-shadow: 2px 0 6px var(--shadow);
+  padding-top: 6px;
 }
 
-.sidebar.collapsed {
-  width: 80px;
-}
+/* Collapsed (mantém comportamento) */
+.sidebar.collapsed { width: 80px; }
 
-/* Logo */
+/* Logo/topo (fundo sutil — pode trocar por imagem) */
 .sidebar-logo {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 24px 0;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 16px 12px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(37,99,235,0.06), transparent);
 }
 
+/* Logo image */
 .sidebar-logo-img {
-  width: 70px;  /* maior para destaque */
-  height: 70px;
+  width: 56px;
+  height: 56px;
   object-fit: contain;
+  border-radius: 6px;
 }
 
-/* Navegação */
+/* Nav container */
 .sidebar-nav {
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-top: 20px;
+  margin-top: 10px;
   gap: 6px;
+  padding: 8px;
 }
 
+/* Cada link/item */
 .sidebar-link {
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 14px 20px;
-  color: #374151;
+  gap: 12px;
+  padding: 10px 14px;
+  color: var(--text);
   text-decoration: none;
-  transition: background 0.25s, color 0.25s, transform 0.1s;
-  border-radius: 10px;
-  margin: 2px 12px;
-  font-size: 1rem;
-  font-weight: 500;
+  transition: background 0.18s ease, transform 0.08s;
+  border-radius: 999px; /* pílula como na imagem */
+  margin: 4px 4px;
+  font-size: 0.98rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
+/* ícone dentro de caixa (quadradinho) */
+.sidebar-link .icon-box {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: transparent;  /* só fica colorido no ativo */
+  color: var(--primary);
+  box-shadow: none;
+  font-size: 16px;
+}
+
+/* texto do link */
+.sidebar-link .link-text { display: inline-block; color: var(--text); }
+
+/* hover leve — fundo acinzentado/azulado */
 .sidebar-link:hover {
-  background: #e0f2fe; /* azul bem clarinho */
-  color: #0f172a;
+  background: #eef6ff;
   transform: translateX(2px);
 }
 
+/* estado ativo — pílula azul e ícone com fundo escuro */
 .sidebar-link.active {
-  background: #2563eb; /* azul forte */
-  color: #ffffff;
-  font-weight: 600;
-  box-shadow: inset 0 0 0 1px #1d4ed8;
+  background: var(--primary);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px var(--primary-dark);
+}
+.sidebar-link.active .link-text { color: #fff; }
+
+/* ícone ativo: quadrado azul mais escuro com ícone branco (como na imagem) */
+.sidebar-link.active .icon-box {
+  background: var(--primary-dark);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(11,61,145,0.18);
 }
 
-/* Emojis/ícones */
-.sidebar-link .emoji-icon {
-  font-size: 22px; /* maior usabilidade */
-  line-height: 1;
+/* ícone não ativo: mantém cor azul no traço (como no exemplo) */
+.sidebar-link:not(.active) .icon-box {
+  color: var(--primary-dark);
+  background: rgba(37,99,235,0.06);
 }
+
+/* ajuste do texto quando collapsed: esconde texto */
+.sidebar.collapsed .link-text { display: none; }
+.sidebar.collapsed .sidebar-link { justify-content: center; padding: 12px 6px; }
+.sidebar.collapsed .icon-box { width: 38px; height: 38px; min-width: 38px; }
 
 /* Footer - Logout */
 .sidebar-footer {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  border-top: 1px solid #e5e7eb;
+  gap: 10px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 600;
   color: #dc2626;
-  transition: background 0.2s, transform 0.1s;
+  margin: 10px 8px;
+  border-radius: 999px;
 }
-
-.sidebar-footer:hover {
-  background: #fee2e2;
-  transform: translateX(2px);
-}
-
-.sidebar-footer .emoji-icon {
-  font-size: 22px;
-}
+.sidebar-footer:hover { background: #fff3f3; transform: translateX(2px); }
 
 /* Botão collapse */
 .collapse-btn {
   position: absolute;
-  top: 20px;
+  top: 14px;
   right: -14px;
-  background: #2563eb;
+  background: var(--primary);
   border: none;
   border-radius: 50%;
   color: #fff;
   padding: 8px;
   cursor: pointer;
-  box-shadow: 0px 3px 6px rgba(0,0,0,0.15);
-  transition: background 0.2s;
+  box-shadow: 0 6px 12px rgba(37,99,235,0.16);
+  transition: transform 0.12s, background 0.12s;
 }
+.collapse-btn:hover { background: var(--primary-dark); transform: scale(1.03); }
 
-.collapse-btn:hover {
-  background: #1d4ed8;
+/* Responsividade: transforma barra em top nav em telas pequenas */
+@media (max-width: 900px) {
+  .sidebar {
+    width: 100%;
+    min-height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    display: block;
+  }
+  .sidebar-nav { flex-direction: row; gap: 8px; overflow-x: auto; padding: 8px; }
+  .sidebar-link { margin: 0 6px; border-radius: 8px; padding: 9px 12px; }
 }

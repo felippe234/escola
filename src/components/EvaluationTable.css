@@ -1,39 +1,67 @@
 .evaluation-table {
-  background: #fff;
+  background: #ffffff;
   border-radius: 12px;
-  box-shadow: 0px 2px 6px rgba(0,0,0,0.08);
-  overflow: hidden;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.08);
+  overflow-x: auto;            /* 🔹 Permite rolagem horizontal apenas se necessário */
+  width: 100%;
+  max-width: 100%;
+  margin: 20px auto;
+  transition: all 0.3s ease;
 }
 
 .evaluation-table table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 800px;            /* 🔹 Garante largura mínima legível */
 }
 
 .evaluation-table th {
-  background: #f3f4f6;
+  background: #0b3d91;         /* Azul do cabeçalho "Gestão Escolar" */
   padding: 12px;
   text-align: left;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #374151;
+  color: #ffffff;              /* Texto branco */
+  white-space: nowrap;         /* 🔹 Evita quebra no cabeçalho */
 }
 
 .evaluation-table td {
   padding: 12px;
   font-size: 0.9rem;
-  color: #111827;
-  border-top: 1px solid #e5e7eb;
+  color: #333333;
+  border-top: 1px solid #e0e0e0;
+  text-align: left;
+  word-wrap: break-word;       /* 🔹 Permite quebra de linhas dentro da célula */
 }
 
 .evaluation-table tr:hover {
-  background: #f9fafb;
+  background: #f4f6fa;
+  transition: background 0.2s ease-in-out;
 }
 
-/* Botões Editar e Excluir */
+/* 🧭 Responsividade */
+@media (max-width: 768px) {
+  .evaluation-table table {
+    font-size: 0.8rem;
+    min-width: 600px;          /* Ajusta largura mínima */
+  }
+
+  .evaluation-table th,
+  .evaluation-table td {
+    padding: 8px;
+  }
+
+  .evaluation-table .btn-editar,
+  .evaluation-table .btn-excluir {
+    width: 70px;
+    font-size: 0.75rem;
+  }
+}
+
+/* 🎨 Botões */
 .evaluation-table .btn-editar,
 .evaluation-table .btn-excluir {
-  width: 80px;              /* ✅ largura fixa para padronizar */
+  width: 80px;
   text-align: center;
   border: none;
   padding: 6px 0;
@@ -41,21 +69,47 @@
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
+  transition: all 0.2s ease;
 }
 
 .evaluation-table .btn-editar {
-  background: #2563eb;
+  background: #0b3d91;
   color: #fff;
 }
 .evaluation-table .btn-editar:hover {
-  background: #1d4ed8;
+  background: #072f72;
+  transform: scale(1.03);
 }
 
 .evaluation-table .btn-excluir {
-  background: #ef4444;
+  background: #d32f2f;
   color: #fff;
 }
 .evaluation-table .btn-excluir:hover {
-  background: #dc2626;
+  background: #b71c1c;
+  transform: scale(1.03);
+}
+
+/* 🟡 Linha de aviso (ex: “Aula de reforço”) */
+.evaluation-table .linha-aviso {
+  background-color: #fff9d6;
+}
+
+/* 🔹 Ajuste visual em telas muito pequenas */
+@media (max-width: 480px) {
+  .evaluation-table table {
+    min-width: 500px;
+  }
+
+  .evaluation-table th,
+  .evaluation-table td {
+    font-size: 0.75rem;
+    padding: 6px;
+  }
+
+  .evaluation-table .btn-editar,
+  .evaluation-table .btn-excluir {
+    width: 60px;
+    font-size: 0.7rem;
+  }
 }

@@ -1,38 +1,42 @@
-// src/context/AuthContext.js
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    // 🔑 tenta recuperar do localStorage na inicialização
     const saved = localStorage.getItem("user");
     return saved ? JSON.parse(saved) : null;
   });
 
-  // lista de usuários fictícios
-  const users = [
-    { email: "admin@escola.com", senha: "1234", role: "admin", nome: "Administrador" },
-    { email: "aluno@escola.com", senha: "1234", role: "aluno", nome: "Ana Souza" },
-    { email: "professor@escola.com", senha: "1234", role: "professor", nome: "Carlos Lima" },
-  ];
+  const login = async (email, senha) => {
+    try {
+      const response = await fetch("http://localhost:4005/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, senha }),
+      });
 
-  const login = (email, senha) => {
-    const found = users.find((u) => u.email === email && u.senha === senha);
-    if (found) {
-      setUser(found);
-      localStorage.setItem("user", JSON.stringify(found)); // 🔒 salva no navegador
-      return true;
+      if (!response.ok) {
+        const err = await response.json();
+        return { success: false, error: err.erro || "Erro no login" };
+      }
+
+      const data = await response.json();
+      setUser(data.usuario);
+      localStorage.setItem("user", JSON.stringify(data.usuario));
+      console.log(data.usuario);
+      return { success: true, user: data.usuario };
+    } catch (error) {
+      console.error("Erro na conexão:", error);
+      return { success: false, error: "Falha de conexão com servidor" };
     }
-    return false;
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("user"); // limpa sessão
+    localStorage.removeItem("user");
   };
 
-  // 🔄 mantém sincronizado com localStorage se mudar
   useEffect(() => {
     if (user) {
       localStorage.setItem("user", JSON.stringify(user));

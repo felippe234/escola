@@ -30,29 +30,26 @@ export default function ProfessoresPage() {
   // 💾 Salvar professor (criar ou atualizar)
   const handleSave = async (data) => {
     try {
+      const payload = {
+        nome: data.nome,
+        email: data.email,
+        telefone: data.telefone,
+        titulacao: data.titulacao,
+        disciplina: data.disciplina, // Envia como string
+      };
+
       if (editData) {
         // Atualizar professor
-        await professorAPI.put(`/professores/${editData.id}`, {
-          nome: data.nome,
-          email: data.email,
-          telefone: data.telefone,
-          titulacao: data.titulacao,
-          disciplina: data.disciplina,
-        });
+        await professorAPI.put(`/professores/${editData.id}`, payload);
+
         setProfessores((prev) =>
           prev.map((p) =>
-            p.id === editData.id ? { ...p, ...data, id: editData.id } : p
+            p.id === editData.id ? { ...p, ...payload, id: editData.id } : p
           )
         );
       } else {
-        // Criar professor (não enviar id)
-        const response = await professorAPI.post("/professores", {
-          nome: data.nome,
-          email: data.email,
-          telefone: data.telefone,
-          titulacao: data.titulacao,
-          disciplina: data.disciplina,
-        });
+        // Criar professor
+        const response = await professorAPI.post("/professores", payload);
         setProfessores((prev) => [...prev, response.data]);
       }
 
@@ -87,7 +84,7 @@ export default function ProfessoresPage() {
           <h1>👨‍🏫 Gestão de Professores</h1>
           {user && (
             <p className="usuario-logado">
-              👤 Logado como: <strong>{user.nome}</strong> ({user.role})
+              👤 Logado como: <strong>{user.nome}</strong> ({user.tipo_usuario})
             </p>
           )}
         </header>
@@ -99,7 +96,7 @@ export default function ProfessoresPage() {
         )}
 
         {/* PERFIL DO PROFESSOR */}
-        {user?.role === "professor" && (
+        {user?.tipo_usuario === "professor" && (
           <div className="professor-perfil">
             <h2>📌 Meu Perfil</h2>
             <p><strong>ID:</strong> {user.id}</p>
@@ -112,7 +109,7 @@ export default function ProfessoresPage() {
         )}
 
         {/* VISÃO DO ADMIN */}
-        {user?.role === "admin" && (
+        {user?.tipo_usuario === "admin" && (
           <div className="admin-professores">
             <div className="professores-header">
               <h2>📋 Lista de Professores</h2>
@@ -143,7 +140,9 @@ export default function ProfessoresPage() {
                     <td>{p.email}</td>
                     <td>{p.telefone}</td>
                     <td>{p.titulacao}</td>
-                    <td>{p.disciplina}</td>
+                    <td>
+                      {p.disciplina || p.disciplinas?.map(d => d.nome).join(", ")}
+                    </td>
                     <td>
                       <button
                         onClick={() => {
@@ -215,7 +214,9 @@ export default function ProfessoresPage() {
                     <input
                       type="text"
                       name="disciplina"
-                      defaultValue={editData?.disciplina || ""}
+                      defaultValue={
+                        editData?.disciplina || editData?.disciplinas?.map(d => d.nome).join(", ") || ""
+                      }
                       required
                     />
 
@@ -239,7 +240,7 @@ export default function ProfessoresPage() {
           </div>
         )}
 
-        {user && !["professor", "admin"].includes(user.role) && (
+        {user && !["professor", "admin"].includes(user.tipo_usuario) && (
           <p className="erro">
             ⚠️ Seu perfil não possui permissões para acessar esta página.
           </p>

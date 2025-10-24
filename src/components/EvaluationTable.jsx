@@ -5,28 +5,39 @@ import DeleteModal from './Modals/DeleteModal';
 import { useAuth } from '../context/AuthContext';
 import { FaEdit, FaTrash } from 'react-icons/fa';
 
+
+
 export default function EvaluationTable({
   avaliacoes = [],
   setAvaliacoes,
   alunosMap = {},
-  turmasMap = {},       // ✅ adicionei para pegar turma
-  disciplinasMap = {},
+  turmasMap = {},
   professoresMap = {}
 }) {
   const [editData, setEditData] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const { user } = useAuth();
 
-  // 🧮 Calcula média ponderada
+  // 🧮 Calcula média ponderada: prova pesa 2x, trabalho 1x
   const calcMedia = (prova, trabalho) => {
     const p = Number(prova) || 0;
     const t = Number(trabalho) || 0;
     return ((p * 2 + t) / 3).toFixed(1);
   };
 
-  // 📊 Determina situação
+  // 📊 Determina situação da nota
   const getSituacao = (media) =>
     media >= 6 ? '✅ Aprovado' : media >= 4 ? '⚠️ Recuperação' : '❌ Reprovado';
+  
+  console.log("🔍 Usuário logado:", user);
+  console.log("🧾 Avaliações recebidas:", avaliacoes);
+
+  // 🔹 Filtra avaliações para aluno logado
+  const avaliacoesFiltradas =
+    user?.tipo_usuario === 'aluno'
+      ? avaliacoes.filter(av => av.aluno_id === user.usuario_id)
+      : avaliacoes;
+
 
   return (
     <div className="evaluation-table">
@@ -49,31 +60,29 @@ export default function EvaluationTable({
           </tr>
         </thead>
         <tbody>
-          {avaliacoes.length > 0 ? (
-            avaliacoes.map((av, index) => {
+          {avaliacoesFiltradas.length > 0 ? (
+            avaliacoesFiltradas.map((av, index) => {
               const prova = Number(av.prova ?? av.nota ?? 0);
               const trabalho = Number(av.trabalho ?? 0);
               const media = calcMedia(prova, trabalho);
 
+              // Nome do aluno
               const alunoNome =
-                alunosMap[av.aluno_id]?.nome ||
-                av.aluno?.nome ||
-                "Desconhecido";
+                alunosMap[av.aluno_id]?.nome || av.aluno?.nome || "Desconhecido";
 
+              // Nome da turma
               const turmaNome =
-                turmasMap[av.turma_id]?.nome ||
-                av.turma?.nome ||
-                "—";
+                turmasMap[av.turma_id]?.nome || av.turma?.nome || "—";
 
-              const disciplinaNome =
-                disciplinasMap[av.disciplina_id]?.nome ||
-                av.disciplina?.nome ||
-                "—";
+              // Nome do professor
+              const professorObj = professoresMap[av.professor_id] || {};
+              const professorNome = professorObj.nome || av.professor?.nome || "—";
 
-              const professorNome =
-                professoresMap[av.professor_id]?.nome ||
-                av.professor?.nome ||
-                "—";
+              // Nome da disciplina: busca no array de disciplinas do professor
+              const disciplinaObj = (professorObj.disciplinas || []).find(
+                d => d.id === av.disciplina_id || d.tipo === av.tipo
+              );
+              const disciplinaNome = disciplinaObj?.nome || av.disciplina || "—";
 
               const rowKey = av.id ?? `${alunoNome}-${av.data}-${index}`;
 
@@ -93,6 +102,7 @@ export default function EvaluationTable({
                   <td>{getSituacao(media)}</td>
                   {user.role !== 'aluno' && (
                     <td>
+                      {/* Botões de edição e exclusão */}
                       <button
                         className="btn-icon"
                         title="Editar"
@@ -130,13 +140,19 @@ export default function EvaluationTable({
         onSave={(newData) => {
           const aluno = alunosMap[newData.aluno_id] || newData.aluno || null;
           const turma = turmasMap[newData.turma_id] || newData.turma || null;
-          const disciplina = disciplinasMap[newData.disciplina_id] || newData.disciplina || null;
-          const professor = professoresMap[newData.professor_id] || newData.professor || null;
 
-          const atualizado = { ...newData, aluno, turma, disciplina, professor };
+          const professorObj = professoresMap[newData.professor_id] || {};
+          const disciplinaObj = (professorObj.disciplinas || []).find(
+            d => d.id === newData.disciplina_id || d.tipo === newData.tipo
+          );
 
-          setAvaliacoes((prev) =>
-            prev.map((a) => (a.id === atualizado.id ? atualizado : a))
+          const professor = professorObj || null;
+          const disciplina = disciplinaObj || newData.disciplina || null;
+
+          const atualizado = { ...newData, aluno, turma, professor, disciplina };
+
+          setAvaliacoes(prev =>
+            prev.map(a => (a.id === atualizado.id ? atualizado : a))
           );
           setEditData(null);
         }}
@@ -147,7 +163,7 @@ export default function EvaluationTable({
         isOpen={!!deleteId}
         onClose={() => setDeleteId(null)}
         onConfirm={() => {
-          setAvaliacoes((prev) => prev.filter((a) => a.id !== deleteId));
+          setAvaliacoes(prev => prev.filter(a => a.id !== deleteId));
           setDeleteId(null);
         }}
       />

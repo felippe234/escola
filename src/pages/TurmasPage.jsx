@@ -1,102 +1,122 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
-import LancarNotaPresencaModal from "../components/Modals/LancarNotaPresencaModal";
 import { useAuth } from "../context/AuthContext";
 import "./TurmasPage.css";
 
 export default function TurmasPage() {
   const { user } = useAuth();
+  const [turmas, setTurmas] = useState([]);
+  const [alunos, setAlunos] = useState({});
 
-  const [turmas, setTurmas] = useState([
-    {
-      id: 1,
-      nome: "6º Ano A",
-      disciplina: "Matemática",
-      professorId: "prof-1",
-      alunos: [
-        { id: 101, nome: "Ana Souza", nota: "", presenca: "" },
-        { id: 102, nome: "João Silva", nota: "", presenca: "" },
-      ],
-    },
-    {
-      id: 2,
-      nome: "7º Ano B",
-      disciplina: "História",
-      professorId: "prof-2",
-      alunos: [
-        { id: 103, nome: "Marcos Oliveira", nota: "", presenca: "" },
-        { id: 104, nome: "Fernanda Lima", nota: "", presenca: "" },
-      ],
-    },
-  ]);
+  useEffect(() => {
+    fetch("http://localhost:4004/turmas")
+      .then((res) => res.json())
+      .then((data) => setTurmas(data));
+  }, []);
 
-  const [selectedAluno, setSelectedAluno] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [selectedTurmaId, setSelectedTurmaId] = useState(null);
+  const isAdmin = user?.tipo_usuario === "admin";
+  const isAluno = user?.tipo_usuario=== "aluno";
 
-  // ✅ Permissões
-  const isAdmin = user?.role === "admin";
-  const isProfessor = user?.role === "professor";
-  const isAluno = user?.role === "aluno";
-
-  // 🛑 Bloqueia aluno
   if (isAluno) {
     return (
       <div className="turmas-layout">
         <Sidebar />
         <div className="main-content">
-          <h2>🚫 Acesso negado</h2>
-          <p>Somente professores e administradores podem acessar a gestão de turmas.</p>
-          <button
-            className="btn-voltar"
-            onClick={() => (window.location.href = "/dashboard")}
-          >
-            🔙 Voltar ao Dashboard
-          </button>
+          <h2>📘 Minhas Turmas</h2>
+          {turmas.map((turma) => (
+            <div key={turma.id} className="turma-card">
+              <h3>{turma.nome}</h3>
+              <button onClick={() => carregarAlunos(turma.id)}>👨‍🎓 Ver Dados</button>
+              {alunos[turma.id] && (
+                <ul>
+                  {alunos[turma.id].map((aluno) =>
+                    aluno.id === user.id ? (
+                      <li key={aluno.id}>
+                        {aluno.nome} - 📊 Média: {aluno.media} - 📅 Presença: {aluno.presenca}%
+                      </li>
+                    ) : null
+                  )}
+                </ul>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     );
   }
 
-  // ✅ Salvar nota/presença
-  const handleSave = (updatedAluno) => {
-    setTurmas((prev) =>
-      prev.map((turma) =>
-        turma.id === selectedTurmaId
-          ? {
-              ...turma,
-              alunos: turma.alunos.map((aluno) =>
-                aluno.id === updatedAluno.id ? updatedAluno : aluno
-              ),
-            }
-          : turma
-      )
-    );
-    setShowModal(false);
-  };
-
-  // ✅ Adicionar/editar/excluir turmas (apenas Admin)
-  const handleAddTurma = () => {
+  // Funções CRUD
+  const handleAddTurma = async () => {
     const nome = prompt("Nome da turma:");
-    const disciplina = prompt("Disciplina:");
-    if (nome && disciplina) {
-      setTurmas((prev) => [
-        ...prev,
-        { id: Date.now(), nome, disciplina, professorId: "prof-1", alunos: [] },
-      ]);
-    }
+    const ano_letivo = prompt("Ano letivo:");
+    const turno = prompt("Turno:");
+    const sala = prompt("Sala:");
+    if (!nome) return;
+
+    const res = await fetch("http://localhost:4004/turmas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome, ano_letivo, turno, sala, status: "Ativa" }),
+    });
+    const data = await res.json();
+    setTurmas([...turmas, data]);
   };
 
-  const handleDeleteTurma = (id) => {
-    if (window.confirm("Tem certeza que deseja excluir esta turma?")) {
-      setTurmas((prev) => prev.filter((t) => t.id !== id));
-    }
+  const handleDeleteTurma = async (id) => {
+    await fetch(`http://localhost:4004/turmas/${id}`, { method: "DELETE" });
+    setTurmas(turmas.filter((t) => t.id !== id));
   };
 
-  // ✅ Professores só podem ver suas turmas
-  const turmasVisiveis = isProfessor
-    ? turmas.filter((t) => t.professorId === "prof-1") // simulação: professor logado é "prof-1"
-    : turmas;
+  const carregarAlunos = async (turmaId) => {
+    const res = await fetch(`http://localhost:4004/turmas/${turmaId}/alunos`);
+    const data = await res.json();
+    setAlunos({ ...alunos, [turmaId]: data });
+  };
+
+  const handleAddAluno = async (turmaId) => {
+    const nome = prompt("Nome do aluno:");
+    const media = prompt("Média:");
+    const presenca = prompt("Presença:");
+    if (!nome) return;
+
+    const res = await fetch(`http://localhost:4004/turmas/${turmaId}/alunos`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome, media, presenca }),
+    });
+    const data = await res.json();
+    setAlunos((prev) => ({
+      ...prev,
+      [turmaId]: [...(prev[turmaId] || []), data],
+    }));
+  };
+
+  const handleEditAluno = async (alunoId, turmaId) => {
+    const nome = prompt("Novo nome:");
+    const media = prompt("Nova média:");
+    const presenca = prompt("Nova presença:");
+    if (!nome) return;
+
+    const res = await fetch(`http://localhost:4004/alunos/${alunoId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome, media, presenca }),
+    });
+    const data = await res.json();
+
+    setAlunos((prev) => ({
+      ...prev,
+      [turmaId]: prev[turmaId].map((a) => (a.id === alunoId ? data : a)),
+    }));
+  };
+
+  const handleDeleteAluno = async (alunoId, turmaId) => {
+    await fetch(`http://localhost:4004/alunos/${alunoId}`, { method: "DELETE" });
+    setAlunos((prev) => ({
+      ...prev,
+      [turmaId]: prev[turmaId].filter((a) => a.id !== alunoId),
+    }));
+  };
 
   return (
     <div className="turmas-layout">
@@ -111,69 +131,36 @@ export default function TurmasPage() {
           )}
         </header>
 
-        {turmasVisiveis.map((turma) => (
+        {turmas.map((turma) => (
           <div key={turma.id} className="turma-card">
-            <h2>
-              {turma.nome} - {turma.disciplina}
-            </h2>
+            <h2>{turma.nome} - {turma.ano_letivo} - {turma.turno}</h2>
 
             {isAdmin && (
-              <div className="turma-actions">
-                <button onClick={() => handleDeleteTurma(turma.id)}>🗑️ Excluir</button>
-              </div>
+              <>
+                <button onClick={() => handleDeleteTurma(turma.id)}>🗑️ Excluir Turma</button>
+                <button onClick={() => handleAddAluno(turma.id)}>➕ Adicionar Aluno</button>
+              </>
             )}
 
-            <table className="turma-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Aluno</th>
-                  <th>Nota</th>
-                  <th>Presença</th>
-                  {(isProfessor || isAdmin) && <th>Ações</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {turma.alunos.map((aluno) => (
-                  <tr key={aluno.id}>
-                    <td>{aluno.id}</td>
-                    <td>{aluno.nome}</td>
-                    <td>{aluno.nota || "-"}</td>
-                    <td>
-                      {aluno.presenca === "presente" && "✅ Presente"}
-                      {aluno.presenca === "falta" && "❌ Falta"}
-                      {aluno.presenca === "justificada" && "📝 Justificada"}
-                      {!aluno.presenca && "-"}
-                    </td>
-                    {(isProfessor || isAdmin) && (
-                      <td>
-                        <button
-                          className="btn-lancar"
-                          onClick={() => {
-                            setSelectedAluno(aluno);
-                            setSelectedTurmaId(turma.id);
-                            setShowModal(true);
-                          }}
-                        >
-                          ➕ Lançar
-                        </button>
-                      </td>
+            <button onClick={() => carregarAlunos(turma.id)}>👨‍🎓 Ver Alunos</button>
+
+            {alunos[turma.id] && (
+              <ul>
+                {alunos[turma.id].map((aluno) => (
+                  <li key={aluno.id}>
+                    {aluno.nome} - 📊 {aluno.media} - 📅 {aluno.presenca}%
+                    {isAdmin && (
+                      <>
+                        <button onClick={() => handleEditAluno(aluno.id, turma.id)}>✏️</button>
+                        <button onClick={() => handleDeleteAluno(aluno.id, turma.id)}>🗑️</button>
+                      </>
                     )}
-                  </tr>
+                  </li>
                 ))}
-              </tbody>
-            </table>
+              </ul>
+            )}
           </div>
         ))}
-
-        {showModal && (
-          <LancarNotaPresencaModal
-            isOpen={showModal}
-            aluno={selectedAluno}
-            onClose={() => setShowModal(false)}
-            onSave={handleSave}
-          />
-        )}
       </div>
     </div>
   );

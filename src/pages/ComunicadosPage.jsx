@@ -176,7 +176,7 @@ export default function ComunicadosPage() {
       <div className="main-content">
         <header className="header">
           <h1>📢 Comunicados</h1>
-          {user?.role !== "aluno" && (
+          {user?.tipo_usuario !== "aluno" && (
             <button className="btn-add" onClick={openNewModal}>
               ➕ Novo Comunicado
             </button>
@@ -198,7 +198,7 @@ export default function ComunicadosPage() {
                 <th>Aluno</th>
                 <th>Remetente</th>
                 <th>Data</th>
-                {user?.role !== "aluno" && <th>Ações</th>}
+                {user?.tipo_usuario !== "aluno" && <th>Ações</th>}
               </tr>
             </thead>
             <tbody>
@@ -216,7 +216,7 @@ export default function ComunicadosPage() {
                       <td>{aluno?.nome || "-"}</td>
                       <td>{c.remetente_id}</td>
                       <td>{c.data_envio}</td>
-                      {user?.role !== "aluno" && (
+                      {user?.tipo_usuario!== "aluno" && (
                         <td className="acoes-cell">
                           <button
                             className="btn-acao editar"
@@ -255,7 +255,7 @@ export default function ComunicadosPage() {
                   handleSave(formData);
                 }}
               >
-                {/* Novo campo de Remetente ID */}
+                
                 <label>Remetente ID</label>
                 <input
                   type="text"
