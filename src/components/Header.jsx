@@ -8,17 +8,10 @@ export default function Header({ user }) {
       <h1 className="header-title">Sistema Escolar</h1>
 
       {user && (
-        <div className="user-info">
-          <p className="user-name">{user.nome}</p>
-          <span className="user-role">
-            {user.tipo_usuario === "aluno"
-              ? "🎓 Aluno"
-              : user.tipo_usuario === "professor"
-              ? "🧑‍🏫 Professor"
-              : "⚙️ Admin"}
-          </span>
-        </div>
-      )}
+            <p className="usuario-logado">
+              👤 Logado como: <strong>{user.email}</strong> ({user.tipo_usuario})
+            </p>
+          )}
     </header>
   );
 }

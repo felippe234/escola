@@ -9,6 +9,7 @@ export default function AlunosPage() {
   const { user } = useAuth();
 
   const [alunos, setAlunos] = useState([]);
+  const [aluno, setAluno] = useState([]);
   const [erro, setErro] = useState(null);
 
   const [editData, setEditData] = useState(null);
@@ -19,14 +20,39 @@ export default function AlunosPage() {
     async function carregarAlunos() {
       try {
         const response = await alunoAPI.get("/alunos");
+        
         setAlunos(response.data);
       } catch (err) {
         console.error("Erro ao buscar alunos:", err);
         setErro("Não foi possível carregar os alunos.");
       }
     }
-    carregarAlunos();
-  }, []);
+    async function carregarAluno(user) {
+      try {
+        
+        if(user.usuario_id){
+          const response = await alunoAPI.get(`/alunos/${user.usuario_id}`);
+          const aluno = {
+           ...user,
+           ...response.data
+          };
+          setAluno(aluno);
+        }
+        
+      } catch (err) {
+        console.error("Erro ao buscar alunos:", err);
+        setErro("Não foi possível carregar os alunos.");
+      }
+    }
+    if (user?.tipo_usuario === "aluno"){
+      
+      carregarAluno(user);
+
+    } else{
+      carregarAlunos();
+    }
+    
+  }, [user]);
 
   // Salvar aluno (POST ou PUT)
   const handleSave = async (data) => {
@@ -88,10 +114,10 @@ export default function AlunosPage() {
       <Sidebar />
       <div className="main-content">
         <header className="header">
-          <h1>👨‍🎓 Gestão de Alunos</h1>
+          <h1> Gestão de Alunos</h1>
           {user && (
             <p className="usuario-logado">
-              👤 Logado como: <strong>{user.nome}</strong> ({user.tipo_usuario})
+              👤 Logado como: <strong>{user.email}</strong> ({user.tipo_usuario})
             </p>
           )}
         </header>
@@ -107,28 +133,28 @@ export default function AlunosPage() {
           <div className="aluno-perfil">
             <h2>📌 Meu Perfil</h2>
             <p>
-              <strong>ID:</strong> {user.id}
+              <strong>ID:</strong> {aluno.id}
             </p>
             <p>
-              <strong>Matrícula:</strong> {user.matricula}
+              <strong>Matrícula:</strong> {aluno.matricula}
             </p>
             <p>
-              <strong>Nome:</strong> {user.nome}
+              <strong>Nome:</strong> {aluno.nome}
             </p>
             <p>
-              <strong>Data de Nascimento:</strong> {user.data_nascimento}
+              <strong>Data de Nascimento:</strong> {aluno.data_nascimento}
             </p>
             <p>
-              <strong>Email:</strong> {user.email}
+              <strong>Email:</strong> {aluno.email}
             </p>
             <p>
-              <strong>Telefone:</strong> {user.telefone}
+              <strong>Telefone:</strong> {aluno.telefone}
             </p>
             <p>
-              <strong>Endereço:</strong> {user.endereco}
+              <strong>Endereço:</strong> {aluno.endereco}
             </p>
             <p>
-              <strong>Status:</strong> {user.status || "ativo"}
+              <strong>Status:</strong> {aluno.status || "ativo"}
             </p>
           </div>
         )}
@@ -136,7 +162,7 @@ export default function AlunosPage() {
         {/* VISÃO DO PROFESSOR */}
         {user?.tipo_usuario === "professor" && (
           <div className="professor-alunos">
-            <h2>👩‍🏫 Lista de Alunos</h2>
+            <h2> Lista de Alunos</h2>
             {erro && <p className="erro">{erro}</p>}
             <table>
               <thead>
@@ -173,7 +199,7 @@ export default function AlunosPage() {
         {user?.tipo_usuario === "admin" && (
           <div className="admin-alunos">
             <div className="alunos-header">
-              <h2>📋 Lista de Alunos</h2>
+              <h2> Lista de Alunos</h2>
               <button className="btn-add" onClick={() => setShowModal(true)}>
                 ➕ Adicionar Aluno
               </button>
@@ -230,7 +256,7 @@ export default function AlunosPage() {
                       e.preventDefault();
                       handleSave({
                         id: editData ? editData.id : null,
-                        matricula: e.target.matricula.value,
+                        // matricula: e.target.matricula.value,
                         nome: e.target.nome.value,
                         data_nascimento: e.target.data_nascimento.value,
                         email: e.target.email.value,
@@ -240,13 +266,13 @@ export default function AlunosPage() {
                       });
                     }}
                   >
-                    <label>Matrícula</label>
+                    {/* <label>Matrícula</label>
                     <input
                       type="text"
                       name="matricula"
                       defaultValue={editData?.matricula || ""}
                       required
-                    />
+                    /> */}
 
                     <label>Nome</label>
                     <input

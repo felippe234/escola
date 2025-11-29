@@ -6,7 +6,9 @@ export default function EditModal({ isOpen, onClose, data, onSave }) {
   const [formData, setFormData] = useState({
     aluno_id: '',
     prova: '',
-    trabalho: ''
+    trabalho: '',
+    peso: '',
+    nota: ''
   });
   const [alunos, setAlunos] = useState([]);
 
@@ -25,7 +27,9 @@ export default function EditModal({ isOpen, onClose, data, onSave }) {
       setFormData({
         aluno_id: data.aluno_id ? String(data.aluno_id) : '',
         prova: data.prova || '',
-        trabalho: data.trabalho || ''
+        trabalho: data.trabalho || '',
+        peso: data.peso || '',
+        nota: data.nota || ''
       });
     }
   }, [data]);
@@ -43,7 +47,9 @@ export default function EditModal({ isOpen, onClose, data, onSave }) {
     const payload = {
       aluno_id: Number(formData.aluno_id),
       prova: formData.prova ? parseFloat(formData.prova) : null,
-      trabalho: formData.trabalho ? parseFloat(formData.trabalho) : null
+      trabalho: formData.trabalho ? parseFloat(formData.trabalho) : null,
+      peso: formData.peso ? parseFloat(formData.peso) : null,
+      nota: formData.nota ? parseFloat(formData.nota) : null
     };
 
     try {
@@ -80,7 +86,19 @@ export default function EditModal({ isOpen, onClose, data, onSave }) {
               ))}
             </select>
           </div>
-
+          <div>
+          <label>Peso</label>
+          <input
+            type="number"
+            step="0.1"
+            min="1"
+            max="10"
+            name="peso"
+            value={formData.peso}
+            onChange={handleChange}
+            required
+          />
+          </div>
           <div>
             <label htmlFor="prova">Prova</label>
             <input
@@ -108,7 +126,18 @@ export default function EditModal({ isOpen, onClose, data, onSave }) {
               onChange={handleChange}
             />
           </div>
-
+          <div>
+          <label>Nota Final</label>
+          <input
+            type="number"
+            step="0.1"
+            min="0"
+            max="10"
+            name="nota"
+            value={formData.nota}
+            onChange={handleChange}
+          />
+          </div>
           <div className="modal-actions">
             <button type="submit" className="btn-salvar">Salvar</button>
             <button type="button" className="btn-cancelar" onClick={onClose}>Cancelar</button>

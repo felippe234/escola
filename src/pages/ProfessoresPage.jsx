@@ -9,6 +9,7 @@ export default function ProfessoresPage() {
   const { user } = useAuth();
 
   const [professores, setProfessores] = useState([]);
+  const [professor, setProfessor] = useState([]);
   const [erro, setErro] = useState(null);
   const [editData, setEditData] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -24,8 +25,31 @@ export default function ProfessoresPage() {
         setErro("Não foi possível carregar os professores.");
       }
     }
-    carregarProfessores();
-  }, []);
+    async function carregarProfessor() {
+      try {
+        const response = await professorAPI.get(`/professores/${user.usuario_id}`);
+        setProfessores(response.data);
+        if(user.usuario_id){
+        const professor = {
+           ...user,
+           ...response.data
+          };
+          setProfessor(professor);
+        }
+      } catch (err) {
+        console.error("Erro ao buscar professores:", err);
+        setErro("Não foi possível carregar os professores.");
+      }
+    }
+    
+    if (user?.tipo_usuario === "professor"){
+      
+      carregarProfessor(user);
+
+    } else{
+      carregarProfessores();
+    }
+  }, [user]);
 
   // 💾 Salvar professor (criar ou atualizar)
   const handleSave = async (data) => {
@@ -81,10 +105,10 @@ export default function ProfessoresPage() {
       <Sidebar />
       <div className="main-content">
         <header className="header">
-          <h1>👨‍🏫 Gestão de Professores</h1>
+          <h1> Gestão de Professores</h1>
           {user && (
             <p className="usuario-logado">
-              👤 Logado como: <strong>{user.nome}</strong> ({user.tipo_usuario})
+              👤 Logado como: <strong>{user.email}</strong> ({user.tipo_usuario})
             </p>
           )}
         </header>
@@ -99,12 +123,12 @@ export default function ProfessoresPage() {
         {user?.tipo_usuario === "professor" && (
           <div className="professor-perfil">
             <h2>📌 Meu Perfil</h2>
-            <p><strong>ID:</strong> {user.id}</p>
-            <p><strong>Nome:</strong> {user.nome}</p>
-            <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>Telefone:</strong> {user.telefone}</p>
-            <p><strong>Titulação:</strong> {user.titulacao}</p>
-            <p><strong>Disciplina:</strong> {user.disciplina}</p>
+            <p><strong>ID:</strong> {professor.id}</p>
+            <p><strong>Nome:</strong> {professor.nome}</p>
+            <p><strong>Email:</strong> {professor.email}</p>
+            <p><strong>Telefone:</strong> {professor.telefone}</p>
+            <p><strong>Titulação:</strong> {professor.titulacao}</p>
+            <p><strong>Disciplina:</strong> {professor.disciplina}</p>
           </div>
         )}
 
@@ -112,7 +136,7 @@ export default function ProfessoresPage() {
         {user?.tipo_usuario === "admin" && (
           <div className="admin-professores">
             <div className="professores-header">
-              <h2>📋 Lista de Professores</h2>
+              <h2> Lista de Professores</h2>
               <button className="btn-add" onClick={() => setShowModal(true)}>
                 ➕ Adicionar Professor
               </button>

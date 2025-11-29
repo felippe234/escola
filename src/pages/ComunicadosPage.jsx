@@ -13,12 +13,11 @@ export default function ComunicadosPage() {
   const [alunos, setAlunos] = useState([]);
   const [turmas, setTurmas] = useState([]);
   const [erro, setErro] = useState(null);
-
-  // Modal e formulário
+  const remetente = user ? user.email : "";  // Modal e formulário
   const [showModal, setShowModal] = useState(false);
   const [editData, setEditData] = useState(null);
   const [formData, setFormData] = useState({
-    remetente_id:"",
+    remetente: remetente,
     titulo: "",
     mensagem: "",
     tipo: "",
@@ -57,7 +56,7 @@ export default function ComunicadosPage() {
   const openNewModal = () => {
     setEditData(null);
     setFormData({
-      remetente_id:"",
+      remetente: remetente,
       titulo: "",
       mensagem: "",
       tipo: "",
@@ -71,7 +70,7 @@ export default function ComunicadosPage() {
   const openEditModal = (comunicado) => {
     setEditData(comunicado);
     setFormData({
-      remetente_id:comunicado.remetente_id,
+      remetente:remetente,
       titulo: comunicado.titulo,
       mensagem: comunicado.mensagem,
       tipo: comunicado.tipo,
@@ -86,7 +85,7 @@ export default function ComunicadosPage() {
     setShowModal(false);
     setEditData(null);
     setFormData({
-      remetente_id:"",
+      remetente:"",
       titulo: "",
       mensagem: "",
       tipo: "",
@@ -103,7 +102,7 @@ export default function ComunicadosPage() {
     try {
       // ✅ Prepara os dados, incluindo campos gerados automaticamente
       const dataToSend = {
-        remetente_id:data.remetente_id,
+        remetente:remetente,
         titulo: data.titulo,
         mensagem: data.mensagem,
         tipo: data.tipo,
@@ -116,7 +115,7 @@ export default function ComunicadosPage() {
       };
 
       // ✅ Validação do lado do cliente
-      if (!dataToSend.titulo || !dataToSend.mensagem || !dataToSend.tipo || !dataToSend.publico_alvo || !dataToSend.remetente_id) {
+      if (!dataToSend.titulo || !dataToSend.mensagem || !dataToSend.tipo || !dataToSend.publico_alvo || !dataToSend.remetente) {
         alert("Preencha todos os campos obrigatórios (título, mensagem, tipo, público-alvo) e certifique-se de estar logado.");
         return;
       }
@@ -175,7 +174,7 @@ export default function ComunicadosPage() {
       <Sidebar />
       <div className="main-content">
         <header className="header">
-          <h1>📢 Comunicados</h1>
+          <h1> Comunicados</h1>
           {user?.tipo_usuario !== "aluno" && (
             <button className="btn-add" onClick={openNewModal}>
               ➕ Novo Comunicado
@@ -214,7 +213,7 @@ export default function ComunicadosPage() {
                       <td>{c.publico_alvo}</td>
                       <td>{turma?.nome || "-"}</td>
                       <td>{aluno?.nome || "-"}</td>
-                      <td>{c.remetente_id}</td>
+                      <td>{c.remetente}</td>
                       <td>{c.data_envio}</td>
                       {user?.tipo_usuario!== "aluno" && (
                         <td className="acoes-cell">
@@ -256,16 +255,9 @@ export default function ComunicadosPage() {
                 }}
               >
                 
-                <label>Remetente ID</label>
-                <input
-                  type="text"
-                  value={formData.remetente_id || ""}
-                   onChange={(e) =>
-                    setFormData({ ...formData, remetente_id: e.target.value })
-                  }
-                  required
-                  
-                />
+                <label>Remetente </label>
+                <p>{remetente}</p>
+               
                 
                 <label>Título</label>
                 <input
